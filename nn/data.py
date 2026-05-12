@@ -72,3 +72,29 @@ def standardize(
     std = X_train.std(axis=0, keepdims=True)
     std = np.where(std == 0, 1.0, std)
     return tuple((arr - mean) / std for arr in (X_train, *others))
+
+def one_hot(y: np.ndarray, n_classes: int) -> np.ndarray:
+    """Convert integer class labels to one-hot encoding."""
+    y = y.astype(int).ravel()
+    out = np.zeros((y.shape[0], n_classes))
+    out[np.arange(y.shape[0]), y] = 1.0
+    return out
+
+
+def make_synthetic_classification(
+    n_samples: int = 1000,
+    n_features: int = 4,
+    n_classes: int = 3,
+    seed: int | None = 0,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Synthetic classification problem with linearly-separable cluster centers.
+
+    Returns X of shape (n_samples, n_features) and Y of shape
+    (n_samples, n_classes) as one-hot labels.
+    """
+    rng = np.random.default_rng(seed)
+    # Random cluster centers, well-separated.
+    centers = rng.standard_normal((n_classes, n_features)) * 3
+    labels = rng.integers(0, n_classes, size=n_samples)
+    X = centers[labels] + rng.standard_normal((n_samples, n_features))
+    return X, one_hot(labels, n_classes)

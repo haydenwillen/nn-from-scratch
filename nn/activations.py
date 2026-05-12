@@ -41,6 +41,12 @@ def tanh(z: np.ndarray) -> np.ndarray:
 def tanh_derivative(z: np.ndarray) -> np.ndarray:
     return 1.0 - np.tanh(z) ** 2
 
+def softmax(z: np.ndarray) -> np.ndarray:
+    """Numerically stable softmax along the last axis."""
+    # Subtract max for stability — softmax is shift-invariant.
+    z_shifted = z - z.max(axis=-1, keepdims=True)
+    exp_z = np.exp(z_shifted)
+    return exp_z / exp_z.sum(axis=-1, keepdims=True)
 
 ACTIVATIONS: dict[str, tuple] = {
     "sigmoid": (sigmoid, sigmoid_derivative),

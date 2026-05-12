@@ -53,13 +53,26 @@ def init_params(
     )
 
 
-def forward(X: np.ndarray, params: Params, activation: str = "relu") -> Cache:
-    """Forward pass. Output layer is linear (suitable for regression)."""
+def forward(
+    X: np.ndarray,
+    params: Params,
+    activation: str = "relu",
+    output: str = "linear",
+) -> Cache:
+    """Forward pass.
+
+    output: 'linear' for regression, 'softmax' for classification.
+    """
     act_fn, _ = activations.get(activation)
     Z1 = X @ params.W1 + params.b1
     A1 = act_fn(Z1)
     Z2 = A1 @ params.W2 + params.b2
-    Y_hat = Z2  # linear output
+    if output == "linear":
+        Y_hat = Z2
+    elif output == "softmax":
+        Y_hat = activations.softmax(Z2)
+    else:
+        raise ValueError(f"Unknown output mode {output!r}")
     return Cache(X=X, Z1=Z1, A1=A1, Z2=Z2, Y_hat=Y_hat)
 
 
@@ -68,17 +81,17 @@ def backward(
     cache: Cache,
     params: Params,
     activation: str = "relu",
+    output: str = "linear",
 ) -> Params:
-    """Backprop for MSE loss with linear output layer.
-
-    Returns gradients as a Params object (same shape as params).
-    """
+    """Backprop. For linear output: MSE gradient. For softmax: cross-entropy."""
     _, act_deriv = activations.get(activation)
     n = Y.shape[0]
 
-    # dL/dZ2 for MSE with linear output: (Y_hat - Y) * 2/n, but we
-    # absorb the 2 into the loss-scaling convention; gradient descent
-    # learning rate compensates either way.
+    # Both losses give dZ2 = (Y_hat - Y) / n at the output layer.
+    # For MSE + linear: this is the standard residual.
+    # For cross-entropy + softmax: the softmax Jacobian and the
+    # cross-entropy gradient combine to give exactly the same form.
+    # Choice of output mode doesn't change this line.
     dZ2 = (cache.Y_hat - Y) / n
     dW2 = cache.A1.T @ dZ2
     db2 = dZ2.sum(axis=0, keepdims=True)
@@ -91,5 +104,10 @@ def backward(
     return Params(W1=dW1, b1=db1, W2=dW2, b2=db2)
 
 
-def predict(X: np.ndarray, params: Params, activation: str = "relu") -> np.ndarray:
-    return forward(X, params, activation).Y_hat
+def predict(
+    X: np.ndarray,
+    params: Params,
+    activation: str = "relu",
+    output: str = "linear",
+) -> np.ndarray:
+    return forward(X, params, activation, output).Y_hat
