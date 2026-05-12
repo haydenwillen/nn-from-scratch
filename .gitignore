@@ -1,18 +1,44 @@
 # Python
 __pycache__/
-*.pyc
-*.pyo
-.ipynb_checkpoints/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+build/
+dist/
 
-# Virtual environments
+# Virtual envs
+.venv/
 venv/
 env/
-.venv/
+.env
+
+# Tooling
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
 
 # OS
 .DS_Store
 Thumbs.db
 
-# IDE
-.vscode/
-.idea/
+# ML artifacts — never commit
+data/
+*.npz
+*.npy
+*.pkl
+checkpoints/
+runs/
+wandb/

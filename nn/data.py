@@ -1,0 +1,74 @@
+"""Data loading, splitting, and normalization.
+
+Starts with a synthetic regression problem so the repo runs end-to-end
+with zero external dependencies. Swap in a real dataset later.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+
+
+@dataclass
+class Split:
+    X_train: np.ndarray
+    Y_train: np.ndarray
+    X_val: np.ndarray
+    Y_val: np.ndarray
+    X_test: np.ndarray
+    Y_test: np.ndarray
+
+
+def make_synthetic_regression(
+    n_samples: int = 1000,
+    n_features: int = 4,
+    noise: float = 0.1,
+    seed: int | None = 0,
+) -> tuple[np.ndarray, np.ndarray]:
+    """A nonlinear regression target so a NN actually beats linear regression."""
+    rng = np.random.default_rng(seed)
+    X = rng.standard_normal((n_samples, n_features))
+    # Nonlinear target: sum of squares + interaction + sin.
+    y = (
+        (X[:, 0] ** 2)
+        + np.sin(X[:, 1])
+        + X[:, 2] * X[:, 3]
+        + noise * rng.standard_normal(n_samples)
+    )
+    return X, y.reshape(-1, 1)
+
+
+def split(
+    X: np.ndarray,
+    Y: np.ndarray,
+    val_frac: float = 0.15,
+    test_frac: float = 0.15,
+    seed: int | None = 0,
+) -> Split:
+    """Shuffle and split into train/val/test."""
+    rng = np.random.default_rng(seed)
+    n = X.shape[0]
+    idx = rng.permutation(n)
+    n_test = int(n * test_frac)
+    n_val = int(n * val_frac)
+    test_idx = idx[:n_test]
+    val_idx = idx[n_test : n_test + n_val]
+    train_idx = idx[n_test + n_val :]
+    return Split(
+        X_train=X[train_idx], Y_train=Y[train_idx],
+        X_val=X[val_idx], Y_val=Y[val_idx],
+        X_test=X[test_idx], Y_test=Y[test_idx],
+    )
+
+
+def standardize(
+    X_train: np.ndarray,
+    *others: np.ndarray,
+) -> tuple[np.ndarray, ...]:
+    """Zero-mean, unit-variance using train statistics only."""
+    mean = X_train.mean(axis=0, keepdims=True)
+    std = X_train.std(axis=0, keepdims=True)
+    std = np.where(std == 0, 1.0, std)
+    return tuple((arr - mean) / std for arr in (X_train, *others))
