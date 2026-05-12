@@ -1,7 +1,7 @@
-"""Data loading, splitting, and normalization.
+"""A nonlinear regression target so a NN actually beats linear regression.
 
-Starts with a synthetic regression problem so the repo runs end-to-end
-with zero external dependencies. Swap in a real dataset later.
+The target combines a squared term, a sin term, and an interaction
+between the first and last features. Works for any n_features >= 1.
 """
 
 from __future__ import annotations
@@ -33,8 +33,8 @@ def make_synthetic_regression(
     # Nonlinear target: sum of squares + interaction + sin.
     y = (
         (X[:, 0] ** 2)
-        + np.sin(X[:, 1])
-        + X[:, 2] * X[:, 3]
+        + np.sin(X[:, 1] if n_features > 1 else X[:, 0])
+        + X[:, 0] * X[:, -1]
         + noise * rng.standard_normal(n_samples)
     )
     return X, y.reshape(-1, 1)
