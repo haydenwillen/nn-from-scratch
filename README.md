@@ -1,12 +1,10 @@
 # nn — a neural network from scratch, in NumPy
 
-A two-layer feedforward neural network for regression, built without any ML framework. The goal is clarity: every line of math is in plain NumPy and the whole network fits in five files.
+A two-layer neural network for regression. No PyTorch, no autograd, no `model.fit()` — just the math, written out in NumPy.
 
-## Why
+I built this to make sure I actually understood what a neural network does under the hood. Forward pass, backprop, gradient descent: it's easy to call a library and watch the loss go down. Writing it yourself is how you find out where the gaps in your understanding actually are.
 
-To make sure I actually understand what a neural network is doing — forward pass, backprop, gradient descent — rather than just calling `model.fit()`.
-
-## Layout
+The whole thing fits in five files:
 
 ```
 nn/
@@ -19,7 +17,7 @@ tests/
   test_training.py   # end-to-end smoke tests
 ```
 
-## Quickstart
+## Running it
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
@@ -50,18 +48,20 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-Tests verify (a) analytical gradients from `backward()` match finite differences to ~1e-6 across all activations, and (b) the training loop fits the synthetic data and generalizes to held-out samples.
+Two things get tested: the analytical gradients from `backward()` match central finite differences to ~1e-6 across all three activations, and the training loop actually fits the synthetic data and generalizes to held-out samples. The first catches math bugs, the second catches everything else.
 
-## What's intentionally missing
+## What's not here
 
-- No PyTorch / TensorFlow / sklearn — the point is to write the math.
-- No mini-batching — full-batch GD keeps the loop readable. Easy extension.
-- No regularization, no momentum, no Adam — also easy extensions.
-- Linear output layer only — classification (softmax + cross-entropy) is a natural next step.
+No PyTorch, TensorFlow, or sklearn — that's the whole point.
 
-## Notes
+No mini-batching either. Full-batch gradient descent keeps the loop short enough to read in one sitting, which matters more than convergence speed on a 1000-sample toy problem. Same reasoning for skipping momentum, Adam, and any form of regularization.
 
-- All gradients are averaged over the batch in `backward`.
-- `backward()` computes the gradient of (1/2) · MSE; the factor of 2 is absorbed into the learning rate (this is why `lr` and reported `train_loss` use slightly different scalings).
-- Weight init uses small Gaussian noise scaled by `init_scale`; biases are zero. For ReLU specifically, He init would be more principled.
-- Standardization statistics come from the training set only (no test leakage).
+The output layer is linear, so this only does regression. Softmax + cross-entropy is the natural next thing to add.
+
+## A few things worth knowing
+
+`backward()` differentiates ½·MSE, not MSE. The factor of 2 gets absorbed into the learning rate — standard convention, but worth flagging since `train_loss` in the history reports MSE and the gradient is technically of something else. The gradient check in `test_gradients.py` compares against ½·MSE to keep them consistent.
+
+Weights are initialized with small Gaussian noise scaled by `init_scale`; biases start at zero. He init would be more principled for ReLU. Haven't done it yet.
+
+Standardization uses training-set statistics only, applied to val and test. Easy thing to get wrong if you're not paying attention.
